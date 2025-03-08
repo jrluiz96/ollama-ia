@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="pt">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Request com Shoelace</title>
+    <link rel="stylesheet" media="(prefers-color-scheme:dark)"
+        href="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.20.0/cdn/themes/dark.css"
+        onload="document.documentElement.classList.add('sl-theme-dark');" />
+    <script type="module"
+        src="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.20.0/cdn/shoelace-autoloader.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+
+        .navbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 1rem;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .pagechat {
+            position: relative;
+            border: solid 2px var(--sl-panel-border-color);
+            margin-top: 7px;
+            height: 300px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            height: 85vh;
+        }
+
+        .dialogo {
+            min-height: 60vh;
+            height: 60vh;
+            overflow-y: auto;
+        }
+
+        .user {
+            background-color: #0000005e;
+            padding: 15px;
+            margin: 5px;
+            border-radius: 5px;
+            width: 70%;
+            float: right;
+        }
+
+        .assistant {
+            background-color: #00000000;
+            padding: 5px;
+            margin: 5px;
+            border-radius: 5px;
+            width: 70%;
+            float: left;
+        }
+
+        .system {
+            background-color: #1a6e79;
+            padding: 5px;
+            margin: 5px;
+            border-radius: 5px;
+            width: fit-content;
+            max-width: 100%;
+            float: left;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="navbar">
+        <sl-dropdown>
+            <sl-button slot="trigger" caret id="versao">Versão Carregando</sl-button>
+            <sl-menu id="menu">
+            </sl-menu>
+        </sl-dropdown>
+        <div>
+            <sl-icon-button name="question-circle" label="Ajuda" style="font-size: 1.5rem;"></sl-icon-button>
+            <sl-icon-button name="gear" label="Configurações" style="font-size: 1.5rem;"></sl-icon-button>
+        </div>
+    </div>
+    <div class="pagechat">
+        <sl-tab-group>
+            <sl-tab slot="nav" panel="general">
+                <sl-dropdown hoist>
+                    <sl-button slot="trigger" caret id="btnListConversas">Conversas</sl-button>
+                    <sl-menu id="listConversas">
+                        <sl-menu-item value="1">Conversa 1</sl-menu-item>
+                        <sl-menu-item value="2">Conversa 2</sl-menu-item>
+                        <sl-menu-item value="3">Conversa 3</sl-menu-item>
+                        <sl-divider></sl-divider>
+                        <sl-menu-item>
+                            Iniciar Nova Conversa
+                            <sl-icon slot="suffix" name="plus-lg"></sl-icon>
+                        </sl-menu-item>
+                    </sl-menu>
+                </sl-dropdown>
+            </sl-tab>
+            <sl-tab slot="nav" panel="custom">Custom</sl-tab>
+            <sl-tab slot="nav" panel="advanced">Advanced</sl-tab>
+            <sl-tab-panel name="general">
+                <div class="dialogo">
+                </div>
+                <sl-progress-bar id="loadChat" style="--height: 6px;" hidden></sl-progress-bar>
+                <br>
+                <div>
+                    <sl-textarea id="textContent" label="Mensagem" placeholder="Digite aqui..."></sl-textarea>
+                    <br>
+                    <div style="width: 100%; display: flex; justify-content: space-between;">
+                        <sl-button variant="neutral">Anexar</sl-button>
+                        <sl-button variant="primary" id="btnEnviarMensagem">Enviar</sl-button>
+                    </div>
+                </div>
+
+            </sl-tab-panel>
+            <sl-tab-panel name="custom">This is the custom tab panel.</sl-tab-panel>
+            <sl-tab-panel name="advanced">This is the advanced tab panel.</sl-tab-panel>
+            <sl-tab-panel name="disabled">This is a disabled tab panel.</sl-tab-panel>
+        </sl-tab-group>
+    </div>
+    <script>
+        const loadChat = document.getElementById('loadChat');
+        const versao = document.getElementById('versao');
+        const vMenu = document.getElementById('menu');
+        const listConversas = document.getElementById('listConversas');
+        const btnListConversas = document.getElementById('btnListConversas');
+        const btnEnviarMensagem = document.getElementById('btnEnviarMensagem');
+        const textContent = document.getElementById('textContent');
+        let allConversas = localStorage.getItem('conversas') ? JSON.parse(localStorage.getItem('conversas')) : [];
+        let conversaAtual = false;
+
+        function createConversa(nome) {
+            const conversa = {
+                id: allConversas.length + 1,
+                nome: nome,
+                model: versao.value,
+                mensagens: []
+            };
+            allConversas.push(conversa);
+            localStorage.setItem('conversas', JSON.stringify(allConversas));
+            atualizarListConversas();
+        }
+
+        function atualizarListConversas() {
+            listConversas.innerHTML = '';
+            allConversas.forEach(conversa => {
+                const option = document.createElement('sl-menu-item');
+                option.value = conversa.id;
+                option.textContent = conversa.nome;
+                listConversas.appendChild(option);
+            });
+            listConversas.appendChild(document.createElement('sl-divider'));
+            const option = document.createElement('sl-menu-item');
+            option.textContent = 'Iniciar Nova Conversa';
+            listConversas.appendChild(option);
+        }
+
+        listConversas.addEventListener('click', (event) => {
+            if (event.target.tagName === 'SL-MENU-ITEM') {
+                console.log(event.target.textContent);
+                if (event.target.textContent.trim() === "Iniciar Nova Conversa") {
+                    btnListConversas.textContent = "Conversas";
+                } else {
+                    btnListConversas.textContent = "Conversas: " + event.target.textContent;
+                    conversaAtual = event.target.value;
+                    loadChat.indeterminate = true;
+                    carregarConversa(event.target.value);
+                }
+            }
+        });
+
+        function carregarConversa(valor) {
+            const conversa = allConversas.find(conversa => conversa.id == valor);
+            if (conversa) {
+                const dialogo = document.querySelector('.dialogo');
+                dialogo.innerHTML = '';
+                conversa.mensagens.forEach(mensagem => {
+                    carregarMensagem(dialogo, mensagem);
+                });
+                loadChat.indeterminate = false;
+            }
+        }
+
+        function carregarMensagem(dialogo, mensagem) {
+            const div = document.createElement('div');
+            div.textContent = mensagem.content;
+            div.className = mensagem.role;
+            dialogo.appendChild(div);
+            scrollBottom(dialogo);
+        }
+
+        function addMensagem(role, content) {
+            const conversa = allConversas.find(conversa => conversa.id == conversaAtual);
+            if (conversa) {
+                conversa.mensagens.push({ role, content });
+                localStorage.setItem('conversas', JSON.stringify(allConversas));
+                carregarMensagem(document.querySelector('.dialogo'), { role, content });
+            }
+            return conversa;
+        }
+
+        function scrollBottom(element) {
+            element.scrollTop = element.scrollHeight;
+        }
+
+        async function sendMensagem() {
+            if (textContent.value) {
+                loadChat.indeterminate = true;
+                model = allConversas.find(conversa => conversa.id == conversaAtual).model;
+                conversa = addMensagem('user', textContent.value);
+                textContent.value = '';
+                try {
+                    const response = await fetch('http://localhost:11434/api/chat', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ model: model, stream: false, messages: conversa.mensagens })
+                    });
+                    const data = await response.json();
+                    content = data.message.content.replace(/<think>.*?<\/think>/gs, "").trim();
+                    conversa = addMensagem('assistant', content);
+                    loadChat.indeterminate = false;
+                } catch (error) {
+                    console.log("Erro ao fazer a requisição: " + error);
+                }
+            }
+            textContent.focus();
+        }
+
+        async function loadModels() {
+            const select = document.getElementById('menu');
+            try {
+                const response = await fetch('http://localhost:11434/api/tags');
+                const data = await response.json();
+                select.innerHTML = '';
+                data.models.forEach(model => {
+                    const option = document.createElement('sl-menu-item');
+                    option.value = model.name.split(':')[0];
+                    option.textContent = model.name.split(':')[0];
+                    select.appendChild(option);
+                });
+                if (data.models.length == 1) {
+                    versao.textContent = 'Versão: ' + data.models[0].name.split(':')[0];
+                    versao.value = data.models[0].name.split(':')[0];
+                }
+            } catch (error) {
+                console.error('Erro ao carregar modelos:', error);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', loadModels);
+        btnEnviarMensagem.addEventListener('click', sendMensagem);
+        atualizarListConversas();
+
+        versao.addEventListener('click', () => {
+            console.log("Botão de versão clicado");
+        });
+
+        vMenu.addEventListener('sl-select', (event) => {
+            const selectedModel = event.detail.item.value; // Obtém o valor do modelo selecionado
+            console.log("Modelo selecionado:", selectedModel);
+
+            // Atualiza o botão de versão com o modelo selecionado
+            versao.textContent = "Versão: " + selectedModel;
+            versao.value = selectedModel;
+
+            // Atualiza a conversa atual (se existir)
+            if (conversaAtual) {
+                allConversas.find(conversa => conversa.id == conversaAtual).model = selectedModel;
+                localStorage.setItem('conversas', JSON.stringify(allConversas));
+            }
+        });
+
+    </script>
+</body>
+
+</html>
