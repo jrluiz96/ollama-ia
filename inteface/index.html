@@ -91,14 +91,14 @@
                         <sl-menu-item value="2">Conversa 2</sl-menu-item>
                         <sl-menu-item value="3">Conversa 3</sl-menu-item>
                         <sl-divider></sl-divider>
-                        <sl-menu-item>
+                        <sl-menu-item id="novaConversa" value="0">
                             Iniciar Nova Conversa
                             <sl-icon slot="suffix" name="plus-lg"></sl-icon>
                         </sl-menu-item>
                     </sl-menu>
                 </sl-dropdown>
             </sl-tab>
-            <sl-tab slot="nav" panel="custom">Custom</sl-tab>
+            <sl-tab slot="nav" panel="Modelos">Systems - Modelos</sl-tab>
             <sl-tab slot="nav" panel="advanced">Advanced</sl-tab>
             <sl-tab-panel name="general">
                 <div class="dialogo">
@@ -115,10 +115,31 @@
                 </div>
 
             </sl-tab-panel>
-            <sl-tab-panel name="custom">This is the custom tab panel.</sl-tab-panel>
+            <sl-tab-panel name="Modelos">List Modelos</sl-tab-panel>
             <sl-tab-panel name="advanced">This is the advanced tab panel.</sl-tab-panel>
             <sl-tab-panel name="disabled">This is a disabled tab panel.</sl-tab-panel>
         </sl-tab-group>
+
+        <sl-dialog label="Nova Conversa" class="dialog-width" style="--width: 50vw;" id="newConversa">
+            <form class="input-validation-required">
+                <sl-input name="nome" label="Nome" required id="fc-nome"></sl-input><br/>
+                <sl-select label="Versão" clearable required id="fc-versao">
+                    <sl-option value="birds">Birds</sl-option>
+                    <sl-option value="cats">Cats</sl-option>
+                    <sl-option value="dogs">Dogs</sl-option>
+                    <sl-option value="other">Other</sl-option>
+                </sl-select><br/>
+                <sl-select label="Modelo" clearable required id="fc-modelo">
+                    <sl-option value="birds">Birds</sl-option>
+                    <sl-option value="cats">Cats</sl-option>
+                    <sl-option value="dogs">Dogs</sl-option>
+                    <sl-option value="other">Other</sl-option>
+                </sl-select>
+                <br/>
+                <sl-button slot="footer" variant="primary">Close</sl-button>
+                <sl-button type="submit" variant="success">Start Conversa</sl-button>
+            </form>
+        </sl-dialog>
     </div>
     <script>
         const loadChat = document.getElementById('loadChat');
@@ -128,6 +149,8 @@
         const btnListConversas = document.getElementById('btnListConversas');
         const btnEnviarMensagem = document.getElementById('btnEnviarMensagem');
         const textContent = document.getElementById('textContent');
+        const modalNovaConversa = document.getElementById('newConversa');
+        const modalCloseButton = modalNovaConversa.querySelector('sl-button');
         let allConversas = localStorage.getItem('conversas') ? JSON.parse(localStorage.getItem('conversas')) : [];
         let conversaAtual = false;
 
@@ -162,6 +185,10 @@
                 console.log(event.target.textContent);
                 if (event.target.textContent.trim() === "Iniciar Nova Conversa") {
                     btnListConversas.textContent = "Conversas";
+                    modalNovaConversa.show();
+
+
+                    //modal Start conversas
                 } else {
                     btnListConversas.textContent = "Conversas: " + event.target.textContent;
                     conversaAtual = event.target.value;
@@ -271,6 +298,8 @@
                 localStorage.setItem('conversas', JSON.stringify(allConversas));
             }
         });
+
+        modalCloseButton.addEventListener('click', () => modalNovaConversa.hide());
 
     </script>
 </body>

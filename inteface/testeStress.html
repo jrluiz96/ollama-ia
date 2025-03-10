@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste de Formulários</title>
+    <script>
+        let questions = [];
+
+        async function loadQuestions() {
+            try {
+                const response = await fetch('questions.json');
+                questions = await response.json();
+            } catch (error) {
+                console.log("Erro ao carregar as perguntas: " + error);
+            }
+        }
+
+        function getRandomQuestion() {
+            return questions.questions.length ? questions.questions[Math.floor(Math.random() * questions.questions.length)] : "";
+        }
+
+        function generateForms() {
+            const container = document.getElementById('formsContainer');
+            container.innerHTML = '';
+            const quantity = parseInt(document.getElementById('formQuantity').value);
+            
+            for (let i = 1; i <= quantity; i++) {
+                const formDiv = document.createElement('div');
+                formDiv.id = `formDiv${i}`;
+                formDiv.style.border = "1px solid #ccc";
+                formDiv.style.padding = "10px";
+                formDiv.style.marginBottom = "10px";
+                formDiv.innerHTML = `
+                    <label>Formulário ${i}: </label>
+                    <input type="text" id="form${i}" value="${getRandomQuestion()}" placeholder="Digite algo">
+                    <br>
+                    <strong>Resposta:</strong>
+                    <p id="response${i}" style="background: #f4f4f4; padding: 5px;"></p>
+                `;
+                container.appendChild(formDiv);
+            }
+        }
+
+        async function sendAllRequests() {
+            const quantity = parseInt(document.getElementById('formQuantity').value);
+            const requests = [];
+            const startTime = performance.now(); // Inicia a contagem de tempo
+            
+            for (let i = 1; i <= quantity; i++) {
+                const inputForm = document.getElementById(`form${i}`).value;
+                requests.push(fetch('http://localhost:11434/api/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        model: document.getElementById('modelo').value,
+                        stream: false,
+                        messages: [
+                            { role: "user", content: inputForm }
+                        ]
+                    })
+                }).then(response => response.json().then(data => ({ index: i, content: data.message?.content.replace(/<think>.*?<\/think>/gs, "").trim() }))));
+            }
+
+            try {
+                const results = await Promise.all(requests);
+                const endTime = performance.now(); // Finaliza a contagem de tempo
+                const executionTime = (endTime - startTime).toFixed(2); // Calcula o tempo gasto
+                
+                results.forEach(({ index, content }) => {
+                    document.getElementById(`response${index}`).innerText = content;
+                });
+                
+                document.getElementById("executionTime").innerText = `Tempo total de execução: ${executionTime} ms`;
+            } catch (error) {
+                console.log("Erro ao fazer as requisições: " + error);
+            }
+        }
+
+        window.onload = loadQuestions;
+    </script>
+</head>
+<body>
+    <h2>Gerador de Formulários</h2>
+    <label for="formQuantity">Quantidade de formulários:</label>
+    <input type="number" id="formQuantity" min="1" value="1">
+    <label for="formQuantity">Modelo:</label>
+    <select id="modelo" required>
+        <option selected>Selecione</option>
+        <option value="qwq">Qwq</option>
+        <option value="deepseek-r1">Deepseek-r1</option>
+        <option value="llama3.2:1b">llama3.2:1b</option>
+    </select>
+    <button onclick="generateForms()">Gerar</button>
+    <br><br>
+    <div id="formsContainer"></div>
+    <br>
+    <button onclick="sendAllRequests()">Enviar todas as requisições</button>
+    <p id="executionTime" style="font-weight: bold; margin-top: 10px;"></p>
+</body>
+</html>
